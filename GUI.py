@@ -1,14 +1,21 @@
 from ast import Str
+from os import remove
 from tkinter import *
+from tkinter import simpledialog
+
 
 import numpy as np
 import random
-from LOGIC import *
 
+from numpy.lib.function_base import _update_dim_sizes
+from LOGIC import *
+from itertools import chain
+from collections import Counter
 
 root = Tk()
 root.geometry("800x600")
 root.title("SCRABBLE")
+
 
 
 
@@ -26,21 +33,30 @@ class Field():
         self.btn.grid(row=posx,column=posy)
 
     def on_click_btn(self):
-        if self.txtvar.get() == "" and B.liu is not None:
+        #count blanks
+        bl = Counter(chain(*[x for x in B.board])).get('')
+        #get all neighbouring fields
+        if_move_possible = Counter([B.board[self.posx-2][self.posy-1],B.board[self.posx][self.posy-1],
+        B.board[self.posx-1][self.posy-2],B.board[self.posx-1][self.posy]])
+
+
+
+        if self.txtvar.get() == "" and B.liu is not None and (if_move_possible.get('') != 4 or bl == 225):
 
             self.txtvar.set(B.liu)
-            B.board[self.posx-1][self.posy-1] = B.liu
-            
+            B.tmp_board[self.posx-1][self.posy-1] = B.liu
+            B.directionx.append(self.posx-1)
+            B.directiony.append(self.posy-1)
             B.liu = None
             print(B.board)
-            print(P.letters_poss)
-
+            print(B.directionx)
+            print(B.directiony)
         else:
             if B.liu is None and self.txtvar.get() != "":
-                B.board[self.posx-1][self.posy-1] = ''
+                B.tmp_board[self.posx-1][self.posy-1] = ''
                 B.liu = self.txtvar.get()
                 self.txtvar.set('')
-                print(B.board)
+         
 
 
 
@@ -55,6 +71,9 @@ class Board(Field):
 
         #generate state of board
         self.board = np.empty(shape=(15,15), dtype=str)
+        self.tmp_board = np.empty(shape=(15,15), dtype=str)
+        self.directionx = []
+        self.directiony = []
 
         self.liu = None
 
@@ -109,8 +128,6 @@ class Player_Field():
 
         if self.txtvar.get() != "" and B.liu is None:
             B.liu = self.txtvar.get()
-
-            print(B.liu)
             self.txtvar.set('')
         else:
             if B.liu is not None and self.txtvar.get() == "":
@@ -142,13 +159,22 @@ class Player(Player_Field):
             tmp_pl_field = Player_Field(k, 'white', self.letters_poss[k-1])
             self.pl_btn_fld.append(tmp_pl_field)
         
-        pl_end_btn = Button(text='KONIEC TURY')
-        pl_end_btn.grid(row=17,column=9, columnspan=5)
-            # tmp_pl_btn_var = StringVar(value=self.letters_poss[k-1])
-            # tmp_pl_btn = Button(root, width="4", textvariable=tmp_pl_btn_var, command=lambda:[self.on_click_lt()])
-            # tmp_pl_btn.grid(row=17,column=k)
-            # self.pl_btn_fld.append(tmp_pl_btn)
-            # self.pl_btn_var_fld.append(tmp_pl_btn_var)
+        self.pl_end_btn = Button(text='KONIEC TURY')
+        self.pl_end_btn.grid(row=17,column=9, columnspan=4)
+
+        self.pl_chkbox = Checkbutton(text="WYMIANA")
+        self.pl_chkbox.grid(row = 17, column=13, columnspan=4)
+
+    def destroy_pl_let(self):
+        self.pl_chkbox.destroy()
+        self.pl_end_btn.destroy()
+        
+        
+        
+
+
+
+
 
 
 
@@ -158,14 +184,36 @@ class Player(Player_Field):
 B = Board()
 
 
+class Game():
+    def __init__(self,no_players,turn_state=False):
+        self.turn_state = False
+        self.pl_pool = []
+        self.no_players = no_players
+        self.curr_player = 0
+        self.curr_word = []
+        for i in range(int(no_players)):
+            pl_name = simpledialog.askstring(prompt='Podaj imię gracza nr ' + str(i+1), title='Do dzieła!')
+            tmp_player = Player(name=pl_name, pos=i+1)
+            self.pl_pool.append(tmp_player)
+        np.random.shuffle(self.pl_pool)
 
-P = Player("Zbyszek",pos=1)
-P.letters_poss = B.get_letters(7)
+
+            
 
 
-P.generate_pl_let()
+        self.pl_pool[self.curr_player].letters_poss = B.get_letters(7)
+        self.pl_pool[self.curr_player].generate_pl_let()
+        a = simpledialog.askstring(title='aaaa', prompt='aaaaa')
+        self.pl_pool[self.curr_player].destroy_pl_let()
+        
+
+G = Game(2)
 
 
+
+# P = Player("Zbyszek",pos=1)
+# P.generate_pl_let()
+# P.letters_poss = B.get_letters(7)
 
 if __name__ == "__main__":
     root.mainloop()
