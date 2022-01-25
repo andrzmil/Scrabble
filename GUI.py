@@ -1,5 +1,5 @@
 from ast import Str
-from os import remove
+import os
 from tkinter import *
 from tkinter import simpledialog
 
@@ -8,9 +8,12 @@ import numpy as np
 import random
 
 from numpy.lib.function_base import _update_dim_sizes
+import pygments
 from LOGIC import *
 from itertools import chain
 from collections import Counter
+
+
 
 
 
@@ -19,80 +22,165 @@ import pygame
 pygame.init()
 
 pygame.display.set_caption('SCRABBLE')
-window = pygame.display.set_mode((800, 800))
-window.fill((255,255,255))
+global screen
+screen = pygame.display.set_mode((1000, 1000))
+screen.fill((255,255,255))
+
+letterset = generate_letterset()
+print(letterset)
 
 
-
-
-
-
-
-#single letter
-class letter():
-    def __init__(self, x,y,letter,bg):
+class board_field(pygame.sprite.Sprite):
+    def __init__(self, i_pos, j_pos ,x, y, letter, bg, bonus=None):
+        super().__init__()
+        #element numbers in i,j matrix
+        self.i_pos = i_pos
+        self.j_pos = j_pos
+        self.tile = None
+        
+        #field coordinates
         self.x = x
         self.y = y
+
         self.letter = ''
-        self.single_letter = pygame.draw.rect(window, bg, [x,y,29,29], 3)
-        self.single_font = pygame.font.SysFont('Arial',15)
+        self.single_letter = pygame.draw.rect(screen, bg, [x,y,47,47], 3)
+        self.bonus = bonus
         
-    def add_text(self, text,x,y):
-        self.currtext = window.blit(self.single_font.render(text, True, (10,10,10)), (x,y))
+        self.is_filled = False
+        
+    def add_tile(self):
+        self.st_srf = pygame.Rect(self.x+4, self.y+4, 40, 40)
+        self.tile = pygame.image.load(os.path.join('tiles',str(random.choice(letterset)+'.png')))
+        screen.blit(self.tile, self.st_srf)
+        self.is_filled = True
+        print("ADD")
+        
+        pygame.display.update()
+        
+        
+    def remove_tile(self):
+        self.is_filled = False
+        print("REMOVE")
+        screen.fill((255,255,255), self.st_srf)
+        del(self.tile)
+        del(self.st_srf)
         pygame.display.update()
 
-class board(letter):
+        
+        
+        
+        
+
+# class single_tile(pygame.sprite.Sprite):
+#     def __init__(self, x, y, letter, screen=None):
+#         super().__init__()
+#         self.x = x    
+#         self.y = y
+#         self.st_srf = pygame.Rect(self.x, self.y, 40,40)    
+#         self.tile = pygame.image.load(os.path.join('tiles',str(random.choice(letterset)+'.png')))
+#         screen.blit(self.tile, self.st_srf)
+#         pygame.display.update()
+        
+
+        
+    
+
+
+
+        
+class board(board_field):
     def __init__(self):
-        self.fieldset = []
-        self.fontset = []
+        #self.fieldset = []
+        
+        self.board_fields = pygame.sprite.Group()
+        
+        
         self.curr_board = np.empty(shape=(15,15), dtype=str)
         self.tmp_board = np.empty(shape=(15,15), dtype=str)
         
-        #draw board
-        for i in range(10,451,30):
+    #draw board
+        for i in range(15):
             tmp_fieldset = []
-            tmp_fontset = []
-            for j in range(10,451,30):
-                #bg adjustment
-                i_ceil = np.ceil(i/30)
-                j_ceil = np.ceil(j/30)
-                #based on the rules set in logic
-                if special_field(i_ceil, j_ceil) == "TWS":
-                    tmp_letter = letter(i,j,'',red)
-                elif special_field(i_ceil, j_ceil) == "DLS":
-                    tmp_letter = letter(i,j,'',light_blue)
-                elif special_field(i_ceil, j_ceil) == "DWS":
-                    tmp_letter = letter(i,j,'',pink)
-                elif special_field(i_ceil, j_ceil) == "TLS":
-                    tmp_letter = letter(i,j,'',blue)
-                elif special_field(i_ceil, j_ceil) == "CNT":
-                    tmp_letter = letter(i,j,'',pink)
-                else:
-                    tmp_letter = letter(i,j,'',black)
-                
-                tmp_fieldset.append(tmp_letter)
-                tmp_fontset.append(tmp_letter.add_text('S', i+10, j+5))
-            self.fieldset.append(tmp_fieldset)
-            self.fontset.append(tmp_fontset)
             
-class player_board(letter):
-        def __init__(self):
-            pass  
+            for j in range(15):
+             #bg adjustWment
                 
-B = board()
+                #based on the rules set in logic
+                if special_field(i+1, j+1) == "TWS":
+                    tmp_field = board_field(i, j, i*49, j*49, '', red, "TWS")
+                elif special_field(i+1, j+1) == "DLS":
+                    tmp_field = board_field(i, j, i*49, j*49, '', light_blue, "DLS")
+                elif special_field(i+1, j+1) == "DWS":
+                    tmp_field = board_field(i ,j, i*49, j*49,'', pink, "DWS")
+                elif special_field(i+1, j+1) == "TLS":
+                    tmp_field = board_field(i, j, i*49, j*49,'', blue, "TLS")
+                elif special_field(i+1, j+1) == "CNT":
+                    tmp_field = board_field(i, j, i*49, j*49,'', pink, "CNT")
+                else:
+                    tmp_field = board_field(i, j, i*49, j*49,'', black, None)
+                
+                self.board_fields.add(tmp_field)
+                
+                # tmp_fieldset.append(tmp_field)
+                # tmp_fontset.append(tmp_field.change_text(''))
+                # self.fieldset.append(tmp_fieldset)
+                # self.fontset.append(tmp_fontset)
+                
+       
+
+
+
+
+b= board()
 
 
 
         
+
+        
     
+        
+            
+        
+
+    
+        
+
+
+
+class player():
+    def __init__(self):
+        pass
+
+test_letters = ['A','B','C','D','E','F','G']
+         
+class player_board(board_field):
+        def __init__(self, letterset = []):
+            self.fieldset = []
+            self.fontset = []
+            self.curr_letterset = []
+            self.player_area = pygame.draw.rect(screen, black, [10,465,451,150], 3)
+            
+            for j in range(16,197,30):
+                self.board_field = board_field(j,470,'',black)
+                
+            
+            
+                
+test = pygame.image.load(os.path.join('tiles','X.png')).convert()
+print(test.get_size())
+
+
+        
+ 
       
         
 
-        
+tile_group = pygame.sprite.Group()        
     
 
 
-#single_letter = pygame.draw.rect(window, (0,0, 255), [20,20,20,20], 2)
+#single_letter = pygame.draw.rect(screen, (0,0, 255), [20,20,20,20], 2)
 
 running = True
 
@@ -105,8 +193,33 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        elif event.type == pygame.MOUSEBUTTONUP:
-            print("AAAAA")
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            pos = pygame.mouse.get_pos()
+            for element in b.board_fields.sprites():
+                if element.single_letter.collidepoint(pos):
+                    if element.is_filled == False:
+                        element.add_tile()
+                    else:
+                        element.remove_tile()
+                    
+                    
+                    
+                  
+                  
+                    
+            
+                
+       
+            
+                        
+                        
+                        
+                        
+                
+
+            
+            
+           
     #pygame.display.init()
 
 
@@ -257,7 +370,7 @@ while running:
 #         self.name = name
 #         self.score = score
 #         self.letters_poss = []
-#         self.tmp_letter = []
+#         self.tmp_field = []
 #         self.pl_btn_fld = []
 #         #generate score indicators for all players
 #         self.pl_lbl_txt_var = StringVar()
