@@ -1,4 +1,5 @@
 import itertools
+import random
 
 red = (255,0,0)
 blue = (0,50,255)
@@ -23,7 +24,7 @@ def generate_letterset():
         tmp_lt = list(itertools.repeat(k,v))
         letterset.append(tmp_lt)
     letterset = [item for sublist in letterset for item in sublist]
-    print(letterset)
+    
     return list(letterset)
 
 
